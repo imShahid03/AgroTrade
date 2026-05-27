@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriTrade Platform</title>
+    <style>
+        /* CSS Variables & Base Setup */
+        :root {
+            --primary-color: #2e7d32; /* Agricultural Green */
+            --primary-hover: #1b5e20;
+            --bg-color: #f1f8e9; /* Light minimalistic green */
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-muted: #666666;
+            --border-color: #e0e0e0;
+            --shadow: 0 4px 6px rgba(0,0,0,0.1);
+            --radius: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#c5e1a5 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        /* Utility Classes */
+        .hidden { display: none !important; }
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        .btn-primary:hover { background-color: var(--primary-hover); }
+        .btn-danger { background-color: #d32f2f; color: white; }
+        .btn-danger:hover { background-color: #b71c1c; }
+        .btn-outline { background-color: transparent; border: 1px solid var(--primary-color); color: var(--primary-color); }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 4px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+        }
+
+        /* Layout & Header */
+        header {
+            background: var(--primary-color);
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+        }
+        main { padding: 30px; max-width: 1200px; margin: 0 auto; }
+
+        /* Login Section */
+        #login-view {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .login-card {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 400px;
+        }
+        .role-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .role-toggle label {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            background: #eee;
+            border-radius: var(--radius);
+            cursor: pointer;
+        }
+        .role-toggle input[type="radio"]:checked + label {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* Dashboard Styles */
+        .dashboard-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            gap: 15px;
+        }
+        .search-bar { flex: 1; max-width: 400px; margin-bottom: 0; }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+        .card h3 { margin-bottom: 10px; color: var(--primary-color); }
+        .card p { margin-bottom: 5px; font-size: 0.95rem; }
+        
+        /* Bids Section */
+        .bids-list {
+            margin-top: 15px;
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: var(--radius);
+            border: 1px solid #eee;
+        }
+        .bid-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #ddd;
+            font-size: 0.9rem;
+        }
+        .bid-item:last-child { border-bottom: none; }
+        .bid-price { font-weight: bold; color: var(--primary-color); }
+
+        .bid-input-row {
+            margin-top: 15px;
+            padding: 15px;
+            background: #e8f5e9;
+            border-radius: var(--radius);
+        }
+
+        /* Modal (Flashcard) */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: var(--radius);
+            width: 100%; max-width: 500px;
+            max-height: 90vh; overflow-y: auto;
+        }
+        .modal-header { display: flex; justify-content: space-between; margin-bottom: 20px; }
+        
+    </style>
+</head>
+<body>
+
+    <section id="login-view">
+        <div class="login-card">
+            <h2>Welcome to AgriTrade</h2>
+            <p style="margin-bottom: 20px; color: var(--text-muted);">Please select your role and enter your name to continue.</p>
+            <form id="login-form">
+                <div class="role-toggle">
+                    <input type="radio" id="role-farmer" name="role" value="farmer" style="display:none;" checked>
+                    <label for="role-farmer">I am a Farmer</label>
+                    <input type="radio" id="role-buyer" name="role" value="buyer" style="display:none;">
+                    <label for="role-buyer">I am a Buyer</label>
+                </div>
+                <label>Full Name</label>
+                <input type="text" id="username" placeholder="e.g. John Doe" required>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Enter Platform</button>
+            </form>
+        </div>
+    </section>
+
+    <header id="main-header" class="hidden">
+        <h2 id="header-title">AgriTrade</h2>
+        <div>
+            <span id="user-greeting" style="margin-right: 15px;"></span>
+            <button id="logout-btn" class="btn btn-danger">Logout</button>
+        </div>
+    </header>
+
+    <main id="farmer-dashboard" class="hidden">
+        <div class="dashboard-controls">
+            <h2>My Listed Commodities</h2>
+            <button class="btn btn-primary" onclick="openModal('add-commodity-modal')">+ Add Commodity</button>
+        </div>
+        <div class="grid" id="farmer-commodity-list">
+            </div>
+    </main>
+
+    <main id="buyer-dashboard" class="hidden">
+        <div class="dashboard-controls">
+            <h2>Marketplace</h2>
+            <input type="text" id="search-bar" class="search-bar" placeholder="Search commodities..." onkeyup="handleSearch()">
+        </div>
+        <div class="grid" id="buyer-commodity-list">
+            </div>
+    </main>
+
+    <div id="add-commodity-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Commodity</h3>
+                <button class="btn btn-outline" onclick="closeModal('add-commodity-modal')">X</button>
+            </div>
+            <form id="add-commodity-form">
+                <label>Commodity Name</label>
+                <input type="text" id="comm-name" required>
+                
+                <div style="display: flex; gap: 10px;">
+                    <div style="flex: 2;">
+                        <label>Quantity for Sale</label>
+                        <input type="number" id="comm-qty" required>
+                    </div>
+                    <div style="flex: 1;">
+                        <label>Unit</label>
+                        <select id="comm-unit">
+                            <option value="Quintals">Quintals</option>
+                            <option value="Tons">Tons</option>
+                            <option value="Kg">Kg</option>
+                        </select>
+                    </div>
+                </div>
+
+                <label>Min Price per Unit (₹)</label>
+                <input type="number" id="comm-price" required>
+                
+                <div style="display: flex; gap: 10px;">
+                    <div style="flex: 1;">
+                        <label>District</label>
+                        <input type="text" id="comm-district" required>
+                    </div>
+                    <div style="flex: 1;">
+                        <label>State</label>
+                        <input type="text" id="comm-state" required>
+                    </div>
+                </div>
+
+                <label>Terms & Conditions (Transport/Delivery)</label>
+                <textarea id="comm-terms" rows="3" required></textarea>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;">List Commodity</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="view-commodity-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="view-comm-title">Commodity Details</h3>
+                <button class="btn btn-outline" onclick="closeModal('view-commodity-modal')">X</button>
+            </div>
+            <div id="view-comm-details"></div>
+            <h4 style="margin-top: 20px;">Active Bids</h4>
+            <div id="view-comm-bids" class="bids-list"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- State Management ---
+        let currentUser = JSON.parse(localStorage.getItem('agriUser')) || null;
+        let commodities = JSON.parse(localStorage.getItem('agriCommodities')) || [];
+
+        // Add mock data if completely empty to show functionality immediately
+        if(commodities.length === 0) {
+            commodities.push({
+                id: Date.now().toString(),
+                farmerName: 'Demo Farmer',
+                name: 'Wheat', quantity: 50, unit: 'Quintals', price: 2200,
+                district: 'Pune', state: 'Maharashtra',
+                terms: 'Buyer arranges transport from farm.',
+                bids: [{ price: 2250, quantity: 20, contactName: 'Demo Buyer', contactDetails: 'demo@buyer.com' }]
+            });
+            saveCommodities();
+        }
+
+        function saveCommodities() {
+            localStorage.setItem('agriCommodities', JSON.stringify(commodities));
+        }
+
+        // --- DOM Elements ---
+        const loginView = document.getElementById('login-view');
+        const mainHeader = document.getElementById('main-header');
+        const farmerDashboard = document.getElementById('farmer-dashboard');
+        const buyerDashboard = document.getElementById('buyer-dashboard');
+        const userGreeting = document.getElementById('user-greeting');
+
+        // --- Initialization ---
+        function init() {
+            if (currentUser) {
+                showDashboard();
+            } else {
+                loginView.classList.remove('hidden');
+                mainHeader.classList.add('hidden');
+                farmerDashboard.classList.add('hidden');
+                buyerDashboard.classList.add('hidden');
+            }
+        }
+
+        // --- Auth Logic ---
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('username').value;
+            const role = document.querySelector('input[name="role"]:checked').value;
+            currentUser = { name, role };
+            localStorage.setItem('agriUser', JSON.stringify(currentUser));
+            showDashboard();
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            currentUser = null;
+            localStorage.removeItem('agriUser');
+            init();
+        });
+
+        function showDashboard() {
+            loginView.classList.add('hidden');
+            mainHeader.classList.remove('hidden');
+            userGreeting.innerText = `Hello, ${currentUser.name} (${currentUser.role})`;
+
+            if (currentUser.role === 'farmer') {
+                farmerDashboard.classList.remove('hidden');
+                buyerDashboard.classList.add('hidden');
+                renderFarmerCommodities();
+            } else {
+                buyerDashboard.classList.remove('hidden');
+                farmerDashboard.classList.add('hidden');
+                renderBuyerCommodities();
+            }
+        }
+
+        // --- Utility Functions ---
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        // --- Farmer Logic ---
+        document.getElementById('add-commodity-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const newComm = {
+                id: Date.now().toString(),
+                farmerName: currentUser.name,
+                name: document.getElementById('comm-name').value,
+                quantity: document.getElementById('comm-qty').value,
+                unit: document.getElementById('comm-unit').value,
+                price: document.getElementById('comm-price').value,
+                district: document.getElementById('comm-district').value,
+                state: document.getElementById('comm-state').value,
+                terms: document.getElementById('comm-terms').value,
+                bids: []
+            };
+            commodities.push(newComm);
+            saveCommodities();
+            closeModal('add-commodity-modal');
+            e.target.reset();
+            renderFarmerCommodities();
+        });
+
+        function deleteCommodity(id) {
+            commodities = commodities.filter(c => c.id !== id);
+            saveCommodities();
+            renderFarmerCommodities();
+        }
+
+        function viewCommodityDetails(id) {
+            const comm = commodities.find(c => c.id === id);
+            document.getElementById('view-comm-title').innerText = `${comm.name} - Details`;
+            document.getElementById('view-comm-details').innerHTML = `
+                <p><strong>Inventory:</strong> ${comm.quantity} ${comm.unit}</p>
+                <p><strong>Min Price:</strong> ₹${comm.price} / ${comm.unit}</p>
+                <p><strong>Location:</strong> ${comm.district}, ${comm.state}</p>
+                <p><strong>Terms:</strong> ${comm.terms}</p>
+            `;
+            
+            const bidsContainer = document.getElementById('view-comm-bids');
+            bidsContainer.innerHTML = '';
+            
+            if (comm.bids.length === 0) {
+                bidsContainer.innerHTML = '<p>No bids yet.</p>';
+            } else {
+                // Sort bids highest to lowest
+                const sortedBids = [...comm.bids].sort((a, b) => b.price - a.price);
+                sortedBids.forEach(bid => {
+                    bidsContainer.innerHTML += `
+                        <div class="bid-item">
+                            <div>
+                                <strong>${bid.contactName}</strong><br>
+                                <small>${bid.contactDetails} | Qty Req: ${bid.quantity}</small>
+                            </div>
+                            <div class="bid-price">₹${bid.price}</div>
+                        </div>
+                    `;
+                });
+            }
+            openModal('view-commodity-modal');
+        }
+
+        function renderFarmerCommodities() {
+            const list = document.getElementById('farmer-commodity-list');
+            list.innerHTML = '';
+            const myCommodities = commodities.filter(c => c.farmerName === currentUser.name);
+            
+            myCommodities.forEach(comm => {
+                const highestBid = comm.bids.length > 0 ? Math.max(...comm.bids.map(b => b.price)) : 'None';
+                list.innerHTML += `
+                    <div class="card">
+                        <h3>${comm.name}</h3>
+                        <p><strong>Quantity:</strong> ${comm.quantity} ${comm.unit}</p>
+                        <p><strong>Min Price:</strong> ₹${comm.price}</p>
+                        <p><strong>Highest Bid:</strong> ${highestBid !== 'None' ? '₹'+highestBid : 'None'}</p>
+                        <div style="margin-top: 15px; display: flex; gap: 10px;">
+                            <button class="btn btn-outline" onclick="viewCommodityDetails('${comm.id}')">View Details & Bids</button>
+                            <button class="btn btn-danger" onclick="deleteCommodity('${comm.id}')">Delete</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // --- Buyer Logic ---
+        function handleSearch() {
+            const term = document.getElementById('search-bar').value.toLowerCase();
+            renderBuyerCommodities(term);
+        }
+
+        function toggleBidForm(id) {
+            const form = document.getElementById(`bid-form-${id}`);
+            form.classList.toggle('hidden');
+        }
+
+        function submitBid(id) {
+            const price = document.getElementById(`bid-price-${id}`).value;
+            const qty = document.getElementById(`bid-qty-${id}`).value;
+            const contact = document.getElementById(`bid-contact-${id}`).value;
+
+            if(!price || !qty || !contact) {
+                alert("Please fill all bid details.");
+                return;
+            }
+
+            const commIndex = commodities.findIndex(c => c.id === id);
+            commodities[commIndex].bids.push({
+                price: parseFloat(price),
+                quantity: parseFloat(qty),
+                contactName: currentUser.name,
+                contactDetails: contact
+            });
+
+            saveCommodities();
+            renderBuyerCommodities(document.getElementById('search-bar').value.toLowerCase());
+        }
+
+        function renderBuyerCommodities(searchTerm = "") {
+            const list = document.getElementById('buyer-commodity-list');
+            list.innerHTML = '';
+            
+            const filteredCommodities = commodities.filter(c => 
+                c.name.toLowerCase().includes(searchTerm) || 
+                c.district.toLowerCase().includes(searchTerm)
+            );
+
+            filteredCommodities.forEach(comm => {
+                // Render previous bids
+                const sortedBids = [...comm.bids].sort((a, b) => b.price - a.price);
+                let bidsHTML = sortedBids.length > 0 ? `<div class="bids-list"><strong>Current Bids:</strong>` : '<div class="bids-list">No bids yet.';
+                sortedBids.forEach(bid => {
+                    bidsHTML += `
+                        <div class="bid-item">
+                            <span>${bid.contactName}</span>
+                            <span class="bid-price">₹${bid.price}</span>
+                        </div>
+                    `;
+                });
+                bidsHTML += `</div>`;
+
+                list.innerHTML += `
+                    <div class="card">
+                        <h3>${comm.name} <small style="color:var(--text-muted); font-size: 0.8rem;">by ${comm.farmerName}</small></h3>
+                        <p><strong>Available:</strong> ${comm.quantity} ${comm.unit}</p>
+                        <p><strong>Min Price:</strong> ₹${comm.price} / ${comm.unit}</p>
+                        <p><strong>Location:</strong> ${comm.district}, ${comm.state}</p>
+                        <p><strong>Terms:</strong> <small>${comm.terms}</small></p>
+                        
+                        ${bidsHTML}
+
+                        <button class="btn btn-primary" style="margin-top: 15px; width: 100%;" onclick="toggleBidForm('${comm.id}')">Bid Now</button>
+                        
+                        <div id="bid-form-${comm.id}" class="bid-input-row hidden">
+                            <input type="number" id="bid-price-${comm.id}" placeholder="Your Bid Price (₹)" required>
+                            <input type="number" id="bid-qty-${comm.id}" placeholder="Quantity Required" required>
+                            <input type="text" id="bid-contact-${comm.id}" placeholder="Your Phone/Email" required>
+                            <button class="btn btn-primary" style="width: 100%;" onclick="submitBid('${comm.id}')">Submit Bid</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // Boot up
+        init();
+    </script>
+</body>
+</html>
