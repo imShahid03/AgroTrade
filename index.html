@@ -58,18 +58,97 @@
       </div>
     </header>
 
-    <main id="farmer-dashboard" class="hidden">
-      <div class="dashboard-controls">
-        <h2>My Listed Commodities</h2>
-        <button
-          class="btn btn-primary"
-          onclick="openModal('add-commodity-modal')"
-        >
-          + Add Commodity
-        </button>
+    <!-- ================= FARMER DASHBOARD ================= -->
+
+    <section id="farmer-dashboard" class="dashboard hidden">
+      <!-- TOP BAR -->
+
+      <div class="topbar">
+        <div class="brand-section">
+          <div class="logo">🌾</div>
+
+          <div>
+            <h2 class="brand-title">AgroTrade</h2>
+
+            <p class="welcome-text">
+              Welcome back,
+              <span id="farmer-name"> Farmer </span>
+            </p>
+          </div>
+
+          <span class="role-badge"> Farmer </span>
+        </div>
+
+        <div class="topbar-actions">
+          <button class="refresh-btn">↻</button>
+
+          <button
+            class="btn btn-primary"
+            onclick="openModal('add-commodity-modal')"
+          >
+            + Add Commodity
+          </button>
+
+          <button class="btn btn-outline" id="logout-btn">Sign Out</button>
+        </div>
       </div>
-      <div class="grid" id="farmer-commodity-list"></div>
-    </main>
+
+      <!-- STATS -->
+
+      <div class="stats-grid">
+        <div class="stats-card">
+          <div class="stats-icon green">📦</div>
+
+          <div>
+            <p class="stats-label">ACTIVE LISTINGS</p>
+
+            <h3 id="stats-listings">0</h3>
+          </div>
+        </div>
+
+        <div class="stats-card">
+          <div class="stats-icon orange">🔨</div>
+
+          <div>
+            <p class="stats-label">TOTAL BIDS RECEIVED</p>
+
+            <h3 id="stats-bids">0</h3>
+          </div>
+        </div>
+
+        <div class="stats-card">
+          <div class="stats-icon green">📈</div>
+
+          <div>
+            <p class="stats-label">HIGHEST BID (₹/UNIT)</p>
+
+            <h3 id="stats-highest">₹0</h3>
+          </div>
+        </div>
+
+        <div class="stats-card">
+          <div class="stats-icon blue">📍</div>
+
+          <div>
+            <p class="stats-label">YOUR LOCATION</p>
+
+            <h3 id="stats-location">Maharashtra</h3>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION HEADER -->
+
+      <div class="section-header">
+        <h2>Your Commodity Listings</h2>
+
+        <p>Active listings — bids sorted by highest price</p>
+      </div>
+
+      <!-- COMMODITY GRID -->
+
+      <div id="farmer-commodity-list" class="commodity-grid"></div>
+    </section>
 
     <main id="buyer-dashboard" class="hidden">
       <div class="dashboard-controls">
@@ -85,58 +164,247 @@
       <div class="grid" id="buyer-commodity-list"></div>
     </main>
 
-    <div id="add-commodity-modal" class="modal-overlay hidden">
-      <div class="modal-content">
+    <!-- ================= ADD COMMODITY MODAL ================= -->
+
+<div
+    id="add-commodity-modal"
+    class="modal-overlay hidden"
+>
+
+    <div class="commodity-modal">
+
+        <!-- HEADER -->
+
         <div class="modal-header">
-          <h3>Add New Commodity</h3>
-          <button
-            class="btn btn-outline"
-            onclick="closeModal('add-commodity-modal')"
-          >
-            X
-          </button>
+
+            <div class="modal-title-group">
+
+                <div class="modal-icon">
+                    🌱
+                </div>
+
+                <div>
+
+                    <h2>
+                        List New Commodity
+                    </h2>
+
+                    <p>
+                        Fill in details to start
+                        receiving bids
+                    </p>
+
+                </div>
+
+            </div>
+
+            <button
+                class="modal-close"
+                onclick="closeModal('add-commodity-modal')"
+            >
+                ✕
+            </button>
+
         </div>
+
+        <!-- FORM -->
+        <div class="modal-content-scroll">
         <form id="add-commodity-form">
-          <label>Commodity Name</label>
-          <input type="text" id="comm-name" required />
 
-          <div style="display: flex; gap: 10px">
-            <div style="flex: 2">
-              <label>Quantity for Sale</label>
-              <input type="number" id="comm-qty" required />
+            <!-- COMMODITY NAME -->
+
+            <div class="form-group">
+
+                <label>
+                    Commodity Name
+                    <span>*</span>
+                </label>
+
+                <p class="field-helper">
+                    Select from common commodities
+                    or type your own
+                </p>
+
+                <input
+                    type="text"
+                    id="commodity-name"
+                    placeholder="e.g. Wheat (Sharbati), Onion (Red)..."
+                    required
+                />
+
             </div>
-            <div style="flex: 1">
-              <label>Unit</label>
-              <select id="comm-unit">
-                <option value="Quintals">Quintals</option>
-                <option value="Tons">Tons</option>
-                <option value="Kg">Kg</option>
-              </select>
+
+            <!-- QUANTITY -->
+
+            <div class="form-group">
+
+                <label>
+                    Quantity / Inventory
+                    <span>*</span>
+                </label>
+
+                <p class="field-helper">
+                    Enter total quantity available for sale
+                </p>
+
+                <div class="quantity-row">
+
+                    <input
+                        type="number"
+                        id="commodity-quantity"
+                        required
+                    />
+
+                    <select id="commodity-unit">
+
+                        <option value="Quintal">
+                            Quintal
+                        </option>
+
+                        <option value="Ton">
+                            Ton
+                        </option>
+
+                        <option value="Kg">
+                            Kg
+                        </option>
+
+                    </select>
+
+                </div>
+
             </div>
-          </div>
 
-          <label>Min Price per Unit (₹)</label>
-          <input type="number" id="comm-price" required />
+            <!-- PRICE -->
 
-          <div style="display: flex; gap: 10px">
-            <div style="flex: 1">
-              <label>District</label>
-              <input type="text" id="comm-district" required />
+            <div class="form-group">
+
+                <label>
+                    Minimum Price per Unit (₹)
+                    <span>*</span>
+                </label>
+
+                <p class="field-helper">
+                    Buyers cannot bid below this price
+                </p>
+
+                <input
+                    type="number"
+                    id="commodity-price"
+                    placeholder="e.g. 2200"
+                    required
+                />
+
             </div>
-            <div style="flex: 1">
-              <label>State</label>
-              <input type="text" id="comm-state" required />
+
+            <!-- LOCATION -->
+
+            <div class="form-group">
+
+                <label>
+                    Commodity Location
+                    <span>*</span>
+                </label>
+
+                <p class="field-helper">
+                    Where is this produce currently stored / available for pickup?
+                </p>
+
+                <div class="location-row">
+
+                    <input
+                        type="text"
+                        id="commodity-district"
+                        placeholder="District"
+                        required
+                    />
+
+                    <select
+                        id="commodity-state"
+                        required
+                    >
+
+                        <option value="">
+                            Select State
+                        </option>
+
+                        <option>
+                            Maharashtra
+                        </option>
+
+                        <option>
+                            Karnataka
+                        </option>
+
+                        <option>
+                            Gujarat
+                        </option>
+
+                        <option>
+                            Punjab
+                        </option>
+
+                        <option>
+                            Haryana
+                        </option>
+
+                    </select>
+
+                </div>
+
             </div>
-          </div>
 
-          <label>Terms & Conditions (Transport/Delivery)</label>
-          <textarea id="comm-terms" rows="3" required></textarea>
+            <!-- TERMS -->
 
-          <button type="submit" class="btn btn-primary" style="width: 100%">
-            List Commodity
-          </button>
-        </form>
-      </div>
+            <div class="form-group">
+
+                <label>
+                    Terms & Conditions
+                    <span>*</span>
+                </label>
+
+                <p class="field-helper">
+                    Specify payment timeline,
+                    transport responsibility,
+                    minimum purchase quantity,
+                    quality standards, etc.
+                </p>
+
+                <textarea
+                    id="commodity-terms"
+                    rows="5"
+                    placeholder="e.g. Payment within 7 days of delivery. Buyer arranges transport. Minimum purchase 10 quintals. Quality inspection allowed before acceptance."
+                    required
+                ></textarea>
+
+            </div>
+
+            <!-- FOOTER -->
+
+            <div class="modal-footer">
+
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    onclick="closeModal('add-commodity-modal')"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                >
+                    List Commodity
+                </button>
+
+            </div>
+            
+          </form>
+        </div>
+    </div>
+
+</div>
     </div>
 
     <div id="view-commodity-modal" class="modal-overlay hidden">

@@ -1,16 +1,29 @@
-
 /// sheets part 
 
 const API_URL =
     "https://script.google.com/macros/s/AKfycbzmbUxTJ9em6wY3wilEKfW6nrUdeCVIwkVx2wu9P-MtNn_sSKplY0_qDUBr9WyHz9MY/exec";
+////bids 
 
-async function fetchCommodities() {
+async function saveBidToSheet(bidData) {
 
-    const response =
-        await fetch(API_URL);
+    const formData = new FormData();
 
-    commodities =
-        await response.json();
+    formData.append(
+        "data",
+        JSON.stringify({
+
+            action: "addBid",
+
+            data: bidData
+        })
+    );
+
+    await fetch(API_URL, {
+
+        method: "POST",
+
+        body: formData
+    });
 }
 /* ================= STATE ================= */
 
@@ -24,13 +37,23 @@ let commodities = [];
 
 async function saveCommodityToSheet(data) {
 
+    const formData = new FormData();
+
+    formData.append(
+        "data",
+        JSON.stringify({
+
+            action: "addCommodity",
+
+            data: data
+        })
+    );
+
     await fetch(API_URL, {
 
         method: "POST",
-        body: JSON.stringify({
-            action: "addCommodity",
-            data: data,
-        }),
+
+        body: formData
     });
 }
 
@@ -51,11 +74,36 @@ const buyerDashboard =
 const userGreeting =
     document.getElementById("user-greeting");
 
+async function fetchCommodities() {
+
+    try {
+
+        const response =
+            await fetch(
+                API_URL +
+                "?action=getCommodities"
+            );
+
+        const data =
+            await response.json();
+
+        commodities = data;
+
+        console.log("Loaded Commodities:", commodities);
+
+    } catch (error) {
+
+        console.error(
+            "Commodity Fetch Error:",
+            error
+        );
+    }
+}
+
 /* ================= INIT ================= */
 
-
 async function init() {
-    // await fetchCommodities();
+    await fetchCommodities();
 
     if (currentUser) {
 
@@ -86,6 +134,7 @@ async function saveUserToSheet(userData) {
             data: userData
         })
     );
+
 
     await fetch(API_URL, {
 
@@ -189,8 +238,8 @@ document
 
         const newComm = {
 
-            id: Date.now().toString(),
-
+            commodityId: "C" + Date.now(),
+            farmerId: currentUser.userId,
             farmerName: currentUser.name,
 
             name:
@@ -218,8 +267,9 @@ document
         };
 
         await saveCommodityToSheet(newComm);
+        commodities.push(newComm);
 
-        await fetchCommodities();
+
 
         closeModal("add-commodity-modal");
 
@@ -231,7 +281,7 @@ document
 function deleteCommodity(id) {
 
     commodities =
-        commodities.filter((c) => c.id !== id);
+        commodities.filter((c) => c.commodityId !== id);
 
 
     renderFarmerCommodities();
@@ -240,7 +290,7 @@ function deleteCommodity(id) {
 function viewCommodityDetails(id) {
 
     const comm =
-        commodities.find((c) => c.id === id);
+        commodities.find((c) => c.commodityId === id);
 
     document.getElementById(
         "view-comm-title"
@@ -267,7 +317,7 @@ function viewCommodityDetails(id) {
         document.getElementById("view-comm-bids");
 
     bidsContainer.innerHTML = "";
-
+    const bids = comm.bids || [];
     if (comm.bids.length === 0) {
 
         bidsContainer.innerHTML =
@@ -276,7 +326,7 @@ function viewCommodityDetails(id) {
     } else {
 
         const sortedBids =
-            [...comm.bids]
+            [...comm.bids || []]
                 .sort((a, b) => b.price - a.price);
 
         sortedBids.forEach((bid) => {
@@ -324,9 +374,11 @@ function renderFarmerCommodities() {
 
     myCommodities.forEach((comm) => {
 
+        const bids = comm.bids || [];
+
         const highestBid =
-            comm.bids.length > 0
-                ? Math.max(...comm.bids.map((b) => b.price))
+            bids.length > 0
+                ? Math.max(...bids.map((b) => b.price))
                 : "None";
 
         list.innerHTML += `
@@ -363,14 +415,14 @@ function renderFarmerCommodities() {
 
                     <button
                         class="btn btn-outline"
-                        onclick="viewCommodityDetails('${comm.id}')"
+                        onclick="viewCommodityDetails('${comm.commodityId}')"
                     >
                         View Details & Bids
                     </button>
 
                     <button
                         class="btn btn-danger"
-                        onclick="deleteCommodity('${comm.id}')"
+                        onclick="deleteCommodity('${comm.commodityId}')"
                     >
                         Delete
                     </button>
@@ -403,7 +455,7 @@ function toggleBidForm(id) {
     form.classList.toggle("hidden");
 }
 
-function submitBid(id) {
+async function submitBid(id) {
 
     const price =
         document.getElementById(`bid-price-${id}`).value;
@@ -413,7 +465,22 @@ function submitBid(id) {
 
     const contact =
         document.getElementById(`bid-contact-${id}`).value;
+    const bidData = {
 
+        bidId: "B" + Date.now(),
+
+        commodityId: id,
+
+        buyerId: currentUser.userId,
+
+        buyerName: currentUser.name,
+
+        bidPrice: parseFloat(price),
+
+        quantity: parseFloat(qty),
+
+        contact: contact
+    };
     if (!price || !qty || !contact) {
 
         alert("Please fill all bid details.");
@@ -422,7 +489,7 @@ function submitBid(id) {
     }
 
     const commIndex =
-        commodities.findIndex((c) => c.id === id);
+        commodities.findIndex((c) => c.commodityId === id);
 
     commodities[commIndex].bids.push({
 
@@ -435,7 +502,7 @@ function submitBid(id) {
         contactDetails: contact,
     });
 
-
+    await saveBidToSheet(bidData);
 
     renderBuyerCommodities(
         document
@@ -463,7 +530,7 @@ function renderBuyerCommodities(searchTerm = "") {
     filteredCommodities.forEach((comm) => {
 
         const sortedBids =
-            [...comm.bids]
+            [...comm.bids || []]
                 .sort((a, b) => b.price - a.price);
 
         let bidsHTML =
@@ -538,38 +605,38 @@ function renderBuyerCommodities(searchTerm = "") {
                     margin-top:15px;
                     width:100%;
                     "
-                    onclick="toggleBidForm('${comm.id}')"
+                    onclick="toggleBidForm('${comm.commodityId}')"
                 >
                     Bid Now
                 </button>
 
                 <div
-                    id="bid-form-${comm.id}"
+                    id="bid-form-${comm.commodityId}"
                     class="bid-input-row hidden"
                 >
 
                     <input
                         type="number"
-                        id="bid-price-${comm.id}"
+                        id="bid-price-${comm.commodityId}"
                         placeholder="Your Bid Price (₹)"
                     >
 
                     <input
                         type="number"
-                        id="bid-qty-${comm.id}"
+                        id="bid-qty-${comm.commodityId}"
                         placeholder="Quantity Required"
                     >
 
                     <input
                         type="text"
-                        id="bid-contact-${comm.id}"
+                        id="bid-contact-${comm.commodityId}"
                         placeholder="Your Phone/Email"
                     >
 
                     <button
                         class="btn btn-primary"
                         style="width:100%;"
-                        onclick="submitBid('${comm.id}')"
+                        onclick="submitBid('${comm.commodityId}')"
                     >
                         Submit Bid
                     </button>
