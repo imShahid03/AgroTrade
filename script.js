@@ -449,7 +449,7 @@ function renderFarmerCommodities() {
 
     const myCommodities =
         commodities.filter(
-            (c) => c.farmerName === currentUser.name
+            (c) => c.farmerId === currentUser.userId
         );
     // ===== FARMER STATS =====
 
@@ -479,15 +479,15 @@ function renderFarmerCommodities() {
     // Update dashboard cards
 
     document.getElementById(
-        "farmer-stats-listings"
+        "stats-listings"
     ).textContent = activeListings;
 
     document.getElementById(
-        "farmer-stats-bids"
+        "stats-bids"
     ).textContent = totalBids;
 
     document.getElementById(
-        "farmer-stats-highest"
+        "stats-highest"
     ).textContent =
         "₹" + highestBid;
     myCommodities.forEach((comm) => {
@@ -561,6 +561,7 @@ function handleSearch() {
             .getElementById("commodity-search")
             .value
             .toLowerCase();
+
 
     renderBuyerCommodities(term);
 }
@@ -649,13 +650,67 @@ function renderBuyerCommodities(searchTerm = "") {
     list.innerHTML = "";
 
     const filteredCommodities =
-        commodities.filter(
-            (c) =>
-                c.name.toLowerCase().includes(searchTerm)
-                ||
-                c.district.toLowerCase().includes(searchTerm)
-        );
+        commodities.filter(c =>
 
+            c.name
+                .toLowerCase()
+                .includes(searchTerm)
+
+            ||
+
+            c.district
+                .toLowerCase()
+                .includes(searchTerm)
+
+            ||
+
+            c.farmerName
+                .toLowerCase()
+                .includes(searchTerm)
+
+            ||
+
+            c.state
+                .toLowerCase()
+                .includes(searchTerm)
+        );
+    document.getElementById(
+        "buyer-stats-listings"
+    ).textContent =
+        commodities.length;
+    document.getElementById(
+        "buyer-stats-results"
+    ).textContent =
+        filteredCommodities.length;
+    const uniqueStates =
+        new Set(
+            commodities.map(c => c.state)
+        );
+    let myBidCount = 0;
+
+    commodities.forEach(comm => {
+
+        (comm.bids || []).forEach(bid => {
+
+            if (
+                bid.buyerId === currentUser.userId
+            ) {
+
+                myBidCount++;
+            }
+
+        });
+
+    });
+
+    document.getElementById(
+        "buyer-stats-bids"
+    ).textContent =
+        myBidCount;
+    document.getElementById(
+        "buyer-stats-states"
+    ).textContent =
+        uniqueStates.size;
     filteredCommodities.forEach((comm) => {
 
         const sortedBids =
@@ -793,6 +848,12 @@ window.handleSearch = handleSearch;
 window.toggleBidForm = toggleBidForm;
 
 window.submitBid = submitBid;
+document
+    .getElementById("commodity-search")
+    .addEventListener(
+        "input",
+        handleSearch
+    );
 
 /* ================= START ================= */
 
