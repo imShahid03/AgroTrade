@@ -1,7 +1,7 @@
 /// sheets part 
 
 const API_URL =
-    "https://script.google.com/macros/s/AKfycbzmbUxTJ9em6wY3wilEKfW6nrUdeCVIwkVx2wu9P-MtNn_sSKplY0_qDUBr9WyHz9MY/exec";
+    "https://script.google.com/macros/s/AKfycbxM3MAqAv_sAIU4wCHm8p44SX-W3icNF1Ultvb0DVo6kc1XREs-wdQijV_OK49rFvRw/exec";
 ////bids 
 
 async function saveBidToSheet(bidData) {
@@ -144,6 +144,15 @@ async function saveUserToSheet(userData) {
 
     });
 }
+async function findUserByMobile(mobile) {
+
+    const response =
+        await fetch(
+            `${API_URL}?action=findUser&mobile=${mobile}`
+        );
+
+    return await response.json();
+}
 document
     .getElementById("login-form")
     .addEventListener("submit", async (e) => {
@@ -153,10 +162,60 @@ document
         const name =
             document.getElementById("username").value;
 
+        const mobile =
+            document.getElementById("mobile").value;
+
+        const pin =
+            document.getElementById("pin").value;
+
         const role =
             document.querySelector(
                 'input[name="role"]:checked'
             ).value;
+
+        const result =
+            await findUserByMobile(mobile);
+
+        // USER EXISTS
+
+        if (result.found) {
+
+            const existingUser =
+                result.user;
+
+            if (
+                String(existingUser.pin) !== String(pin)
+            ) {
+
+                alert("Invalid PIN");
+
+                return;
+            }
+
+            if (
+                String(existingUser.role).toLowerCase() !==
+                String(role).toLowerCase()
+            ) {
+
+                alert("Wrong role selected");
+
+                return;
+            }
+
+            currentUser =
+                existingUser;
+
+            localStorage.setItem(
+                "agriUser",
+                JSON.stringify(currentUser)
+            );
+
+            showDashboard();
+
+            return;
+        }
+
+        // NEW USER
 
         currentUser = {
 
@@ -164,18 +223,36 @@ document
 
             name,
 
+            mobile,
+
+            pin,
+
             role
         };
+
+        await saveUserToSheet(
+            currentUser
+        );
+
         localStorage.setItem(
             "agriUser",
             JSON.stringify(currentUser)
         );
-        await saveUserToSheet(currentUser);
+
         showDashboard();
     });
-
 document
     .getElementById("logout-btn")
+    .addEventListener("click", () => {
+
+        currentUser = null;
+
+        localStorage.removeItem("agriUser");
+
+        init();
+    });
+document
+    .getElementById("buyer-logout-btn")
     .addEventListener("click", () => {
 
         currentUser = null;
@@ -294,12 +371,14 @@ function viewCommodityDetails(id) {
 
     document.getElementById(
         "view-comm-title"
-    ).innerText = `${comm.name} - Details`;
+    ).innerText = `Commodity Information
+    ${comm.name} `;
 
     document.getElementById(
         "view-comm-details"
     ).innerHTML = `
-
+    <div class="commodity-details-card">
+        
         <p><strong>Inventory:</strong>
         ${comm.quantity} ${comm.unit}</p>
 
@@ -311,6 +390,7 @@ function viewCommodityDetails(id) {
 
         <p><strong>Terms:</strong>
         ${comm.terms}</p>
+    </div>
     `;
 
     const bidsContainer =
@@ -337,10 +417,10 @@ function viewCommodityDetails(id) {
 
                     <div>
 
-                        <strong>${bid.contactName}</strong><br>
+                        <strong>${bid.buyerName}</strong><br>
 
                         <small>
-                        ${bid.contactDetails}
+                        ${bid.contact}
                         |
                         Qty Req:
                         ${bid.quantity}
@@ -371,7 +451,45 @@ function renderFarmerCommodities() {
         commodities.filter(
             (c) => c.farmerName === currentUser.name
         );
+    // ===== FARMER STATS =====
 
+    const activeListings =
+        myCommodities.length;
+
+    let totalBids = 0;
+
+    let highestBid = 0;
+
+    myCommodities.forEach(comm => {
+
+        const bids = comm.bids || [];
+
+        totalBids += bids.length;
+
+        bids.forEach(bid => {
+
+            if (bid.price > highestBid) {
+
+                highestBid = bid.price;
+
+            }
+        });
+    });
+
+    // Update dashboard cards
+
+    document.getElementById(
+        "farmer-stats-listings"
+    ).textContent = activeListings;
+
+    document.getElementById(
+        "farmer-stats-bids"
+    ).textContent = totalBids;
+
+    document.getElementById(
+        "farmer-stats-highest"
+    ).textContent =
+        "₹" + highestBid;
     myCommodities.forEach((comm) => {
 
         const bids = comm.bids || [];
@@ -440,7 +558,7 @@ function handleSearch() {
 
     const term =
         document
-            .getElementById("search-bar")
+            .getElementById("commodity-search")
             .value
             .toLowerCase();
 
@@ -456,6 +574,17 @@ function toggleBidForm(id) {
 }
 
 async function submitBid(id) {
+    console.log("price field",
+        document.getElementById(`bid-price-${id}`)
+    );
+
+    console.log("qty field",
+        document.getElementById(`bid-qty-${id}`)
+    );
+
+    console.log("contact field",
+        document.getElementById(`bid-contact-${id}`)
+    );
 
     const price =
         document.getElementById(`bid-price-${id}`).value;
@@ -497,7 +626,7 @@ async function submitBid(id) {
 
         quantity: parseFloat(qty),
 
-        contactName: currentUser.name,
+        buyerName: currentUser.name,
 
         contactDetails: contact,
     });
@@ -506,7 +635,7 @@ async function submitBid(id) {
 
     renderBuyerCommodities(
         document
-            .getElementById("search-bar")
+            .getElementById("commodity-search")
             .value
             .toLowerCase()
     );
@@ -546,7 +675,7 @@ function renderBuyerCommodities(searchTerm = "") {
 
                 <div class="bid-item">
 
-                    <span>${bid.contactName}</span>
+                    <span>${bid.buyerName}</span>
 
                     <span class="bid-price">
                         ₹${bid.price}

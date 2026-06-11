@@ -43,6 +43,21 @@
             placeholder="e.g. John Doe"
             required
           />
+          <label>Mobile Number</label>
+<input
+    type="tel"
+    id="mobile"
+    required
+/>
+
+<label>4-Digit Security PIN</label>
+<input
+    type="password"
+    id="pin"
+    maxlength="4"
+    pattern="[0-9]{4}"
+    required
+/>
           <button type="submit" class="btn btn-primary" style="width: 100%">
             Enter Platform
           </button>
@@ -54,7 +69,6 @@
       <h2 id="header-title">AgriTrade</h2>
       <div>
         <span id="user-greeting" style="margin-right: 15px"></span>
-        <button id="logout-btn" class="btn btn-danger">Logout</button>
       </div>
     </header>
 
@@ -150,19 +164,199 @@
       <div id="farmer-commodity-list" class="commodity-grid"></div>
     </section>
 
-    <main id="buyer-dashboard" class="hidden">
-      <div class="dashboard-controls">
-        <h2>Marketplace</h2>
-        <input
-          type="text"
-          id="search-bar"
-          class="search-bar"
-          placeholder="Search commodities..."
-          onkeyup="handleSearch()"
-        />
-      </div>
-      <div class="grid" id="buyer-commodity-list"></div>
-    </main>
+    <!-- ================= BUYER DASHBOARD ================= -->
+
+<section
+    id="buyer-dashboard"
+    class="dashboard hidden"
+>
+
+    <!-- TOPBAR -->
+
+    <div class="topbar">
+
+        <div class="brand-section">
+
+            <div class="logo">
+                🌾
+            </div>
+
+            <div>
+
+                <h2 class="brand-title">
+                    AgroTrade
+                </h2>
+
+                <p class="welcome-text">
+                    Welcome,
+                    <span id="buyer-name">
+                        Buyer
+                    </span>
+                </p>
+
+            </div>
+
+            <span class="role-badge buyer-badge">
+                Buyer
+            </span>
+
+        </div>
+
+        <!-- SEARCH -->
+
+        <div class="buyer-search-wrapper">
+
+            <input
+                type="text"
+                id="commodity-search"
+                placeholder="Search by commodity, district, or farmer name..."
+            />
+
+        </div>
+
+        <div class="topbar-actions">
+
+            <button class="refresh-btn">
+                ↻
+            </button>
+
+            <button
+                class="btn btn-outline"
+                id="buyer-logout-btn"
+            >
+                Sign Out
+            </button>
+
+        </div>
+
+    </div>
+
+    <!-- STATS -->
+
+    <div class="stats-grid">
+
+        <div class="stats-card">
+
+            <div class="stats-icon green">
+                📦
+            </div>
+
+            <div>
+
+                <p class="stats-label">
+                    AVAILABLE LISTINGS
+                </p>
+
+                <h3 id="buyer-stats-listings">
+                    0
+                </h3>
+
+            </div>
+
+        </div>
+
+        <div class="stats-card">
+
+            <div class="stats-icon orange">
+                🔨
+            </div>
+
+            <div>
+
+                <p class="stats-label">
+                    MY ACTIVE BIDS
+                </p>
+
+                <h3 id="buyer-stats-bids">
+                    0
+                </h3>
+
+            </div>
+
+        </div>
+
+        <div class="stats-card">
+
+            <div class="stats-icon blue">
+                📍
+            </div>
+
+            <div>
+
+                <p class="stats-label">
+                    STATES AVAILABLE
+                </p>
+
+                <h3 id="buyer-stats-states">
+                    0
+                </h3>
+
+            </div>
+
+        </div>
+
+        <div class="stats-card">
+
+            <div class="stats-icon green">
+                📈
+            </div>
+
+            <div>
+
+                <p class="stats-label">
+                    SEARCH RESULTS
+                </p>
+
+                <h3 id="buyer-stats-results">
+                    0
+                </h3>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- FILTER -->
+
+    <div class="buyer-filter-row">
+
+        <span class="filter-label">
+            ⚙ Filter by State:
+        </span>
+
+        <button class="filter-chip active">
+            All States
+        </button>
+
+        <button class="filter-chip">
+            Maharashtra
+        </button>
+
+    </div>
+
+    <!-- SECTION HEADER -->
+
+    <div class="section-header">
+
+        <h2>
+            Browse Commodities
+        </h2>
+
+        <p id="buyer-listing-count">
+            0 listings available
+        </p>
+
+    </div>
+
+    <!-- COMMODITY GRID -->
+
+    <div
+        id="buyer-commodity-list"
+        class="commodity-grid"
+    ></div>
+
+</section>
 
     <!-- ================= ADD COMMODITY MODAL ================= -->
 
@@ -227,7 +421,7 @@
 
                 <input
                     type="text"
-                    id="commodity-name"
+                    id="comm-name"
                     placeholder="e.g. Wheat (Sharbati), Onion (Red)..."
                     required
                 />
@@ -251,11 +445,11 @@
 
                     <input
                         type="number"
-                        id="commodity-quantity"
+                        id="comm-qty"
                         required
                     />
 
-                    <select id="commodity-unit">
+                    <select id="comm-unit">
 
                         <option value="Quintal">
                             Quintal
@@ -290,7 +484,7 @@
 
                 <input
                     type="number"
-                    id="commodity-price"
+                    id="comm-price"
                     placeholder="e.g. 2200"
                     required
                 />
@@ -314,13 +508,13 @@
 
                     <input
                         type="text"
-                        id="commodity-district"
+                        id="comm-district"
                         placeholder="District"
                         required
                     />
 
                     <select
-                        id="commodity-state"
+                        id="comm-state"
                         required
                     >
 
@@ -371,7 +565,7 @@
                 </p>
 
                 <textarea
-                    id="commodity-terms"
+                    id="comm-terms"
                     rows="5"
                     placeholder="e.g. Payment within 7 days of delivery. Buyer arranges transport. Minimum purchase 10 quintals. Quality inspection allowed before acceptance."
                     required
@@ -408,7 +602,7 @@
     </div>
 
     <div id="view-commodity-modal" class="modal-overlay hidden">
-      <div class="modal-content">
+      <div class="modal-content commodity-details-card">
         <div class="modal-header">
           <h3 id="view-comm-title">Commodity Details</h3>
           <button
